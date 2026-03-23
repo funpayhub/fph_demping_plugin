@@ -120,6 +120,15 @@ class DempingOfferNode(Properties):
             )
         )
 
+        self.keywords: ListParameter[str] = self.attach_node(
+            ListParameter(
+                id='keywords',
+                name='Ключевые слова',
+                description='При демпинге будут учитываться только те лоты, '
+                            'в которых есть указанные ключевые слова'
+            )
+        )
+
         self.ignore_friends = self.attach_node(
             ToggleParameter(
                 id='ignore_friends',
