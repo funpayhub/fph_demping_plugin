@@ -39,7 +39,7 @@ class DemperProperties(Properties):
     async def load_from_dict(self, properties_dict: dict[str, Any]) -> None:
         await super().load_from_dict(properties_dict)
         for node_id, node_dict in properties_dict.items():
-            if not node_id.startswith('__offer__'):
+            if not DempingOfferNode.is_offer_node(node_id):
                 continue
 
             node = await self.add_for_offer(node_id.lstrip('__offer__'), save=False)
@@ -100,6 +100,16 @@ class DempingOfferNode(Properties):
             )
         )
 
+        self.ignore_offline = self.attach_node(
+            ToggleParameter(
+                id='ignore_offline',
+                name='Игнорировать оффлайн',
+                description='При демпинге лота не будут учитываться лоты, '
+                            'у которых нет автовыдачи и продавцы которых оффлайн.',
+                default_value=False,
+            )
+        )
+
         self.from_rating = self.attach_node(
             IntParameter(
                 id='from_rating',
@@ -141,3 +151,11 @@ class DempingOfferNode(Properties):
     @classmethod
     def get_id_for(cls, offer_id: str) -> str:
         return f'__offer__{offer_id}'
+
+    @classmethod
+    def is_offer_node(cls, node_id: str) -> bool:
+        return node_id.startswith('__offer__')
+
+    @property
+    def offer_id(self) -> int:
+        return int(self.id.lstrip('__offer__'))

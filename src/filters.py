@@ -42,12 +42,20 @@ def keywords_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
     return any(i in offer.title for i in props.keywords.value)
 
 
+def online_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
+    if not props.ignore_offline:
+        return True
+
+    return not offer.auto_delivery and not offer.seller.online
+
+
 FILTERS = [
     friend_filter,
     min_price_filter,
     max_price_filter,
     rating_filter,
     review_filter,
+    online_filter,
 ]
 
 
