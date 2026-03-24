@@ -5,34 +5,34 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from funpaybotengine.types import OfferPreview
-    from demping.src.properties import DempingOfferNode
+    from dumping.src.properties import DumpingOfferNode
 
 
 
-def friend_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
+def friend_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     if not props.ignore_friends:
         return True
 
     return not (offer.seller.id in props.parent.friends_list.value)
 
 
-def min_price_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
+def min_price_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     return (offer.price - props.diff.value) >= props.min_price.value
 
 
-def max_price_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
+def max_price_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     return (offer.price - props.diff.value) <= props.max_price.value
 
 
-def rating_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
+def rating_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     return offer.seller.rating >= props.from_rating.value
 
 
-def review_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
+def review_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     return offer.seller.reviews_amount >= props.from_reviews_amount.value
 
 
-def keywords_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
+def keywords_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     if not props.keywords.value:
         return True
 
@@ -42,7 +42,7 @@ def keywords_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
     return any(i in offer.title for i in props.keywords.value)
 
 
-def online_filter(offer: OfferPreview, props: DempingOfferNode) -> bool:
+def online_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     if not props.ignore_offline:
         return True
 
@@ -59,5 +59,5 @@ FILTERS = [
 ]
 
 
-def filter_offers(offers: list[OfferPreview], props: DempingOfferNode) -> list[OfferPreview]:
+def filter_offers(offers: list[OfferPreview], props: DumpingOfferNode) -> list[OfferPreview]:
     return [i for i in offers if all(filt(i, props) for filt in FILTERS)]

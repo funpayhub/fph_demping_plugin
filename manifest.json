@@ -2,7 +2,7 @@
   "manifest": 1,
   "plugin_version": "0.0.1",
   "app_version": ">=0.5.1",
-  "plugin_id": "com.github.qvvonk.funpayhub.demping_plugin",
+  "plugin_id": "com.github.qvvonk.funpayhub.dumping_plugin",
   "name": "Демпер",
   "description": "Позволяет автоматизировать занижение цены против конкурентов.",
   "repo": "https://github.com/funpayhub/fph_demping_plugin",
@@ -14,5 +14,5 @@
       "Telegram": "@qvvonk"
     }
   },
-  "entry_point": "src.plugin.DempingPlugin"
+  "entry_point": "src.plugin.DumpingPlugin"
 }
