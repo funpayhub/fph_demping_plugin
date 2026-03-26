@@ -6,46 +6,48 @@ from dataclasses import dataclass
 from asyncio import Lock
 from collections.abc import Callable, Coroutine
 
-from funpaybotengine import Bot
+
 from dumping.src.logger import logger
 from funpaybotengine.types.enums import SubcategoryType
 
 
 if TYPE_CHECKING:
     from funpaybotengine.types import OfferPreview
+    from funpaybotengine import Bot as FPBot
 
 
 type OnFetchCallback = Callable[[int, list[OfferPreview]], Coroutine[Any, Any, Any]]
 
 
 class OffersFetcher:
-    def __init__(self, subcategory_id: int, *, on_fetch: OnFetchCallback | None = None):
+    def __init__(
+        self, subcategory_id: int, bot: FPBot, *, on_fetch: OnFetchCallback | None = None
+    ) -> None:
         self._subcategory_id = subcategory_id
         self.on_fetch = on_fetch
-
-        self._last_hash: int | None = None
-
+        self._bot = bot
         self._running_lock: Lock = Lock()
 
     async def _iteration(self) -> None:
-        bot = Bot()
-
-        for i in range(3):
+        attempts = 3
+        while True:
+            attempts -= 1
             try:
-                page = await bot.get_subcategory_page(SubcategoryType.OFFERS, self._subcategory_id)
+                page = await self._bot.get_subcategory_page(
+                    SubcategoryType.OFFERS, self._subcategory_id
+                )
                 break
             except Exception as e:
-                print(e)
-                continue
-        else:
-            ...
-            return
+                if not attempts:
+                    logger.error(
+                        'Произошла ошибка получения таблицы лотов подкатегории %d.',
+                        self.subcategory_id,
+                        exc_info=True
+                    )
+                return
 
-        offers_hash = hash(tuple(i.id for i in (page.offers or [])))
-        if offers_hash != self._last_hash:
-            self._last_hash = offers_hash
-            if self.on_fetch is not None:
-                asyncio.create_task(self.on_fetch(self._subcategory_id, list(page.offers or [])))
+        if self.on_fetch is not None:
+            asyncio.create_task(self.on_fetch(self._subcategory_id, list(page.offers or [])))
 
     async def _start(self) -> None:
         if self._running_lock.locked():
@@ -55,7 +57,7 @@ class OffersFetcher:
         async with self._running_lock:
             while True:
                 await self._iteration()
-                await asyncio.sleep(30)
+                await asyncio.sleep(10)
 
     async def start(self) -> None:
         try:
@@ -81,16 +83,17 @@ class FetcherInfo:
 
 
 class FetchersManager:
-    def __init__(self, on_fetch: OnFetchCallback | None = None):
+    def __init__(self, bot: FPBot, on_fetch: OnFetchCallback | None = None):
         self._fetchers: dict[int, FetcherInfo] = {}
         self._on_fetch = on_fetch
+        self._bot = bot
 
     def subscribe_to(self, subcategory_id: int) -> None:
         if subcategory_id in self._fetchers:
             self._fetchers[subcategory_id].subscribers += 1
             return
 
-        fetcher = OffersFetcher(subcategory_id, on_fetch=self.on_fetch_callback)
+        fetcher = OffersFetcher(subcategory_id, self._bot, on_fetch=self.on_fetch_callback)
         info = FetcherInfo(subcategory_id, fetcher)
         task = asyncio.create_task(fetcher.start())
         info.task = task

@@ -24,6 +24,7 @@ router = Router('dumping:internal')
 
 
 fee: dict[int, float] = {}
+offers_cache: dict[int, tuple[int, ...]] = {}
 
 
 @router.on_event(event_filter=OffersListFetch.__event_name__)
@@ -32,20 +33,39 @@ async def dump_price(
     offers_list: list[OfferPreview],
     plugin_properties: DumperProperties,
     hub: FPH,
+    dumper_offers_states: dict[int, bool]
 ) -> None:
+    to_cache = tuple(i.id for i in (offers_list or []))
+    update = True
+    if to_cache == offers_cache.get(subcategory_id):
+        update = False
+    offers_cache[subcategory_id] = to_cache
+
     offer_ids = {
         int(DumpingOfferNode.extract_offer_id(i.id))
         for i in plugin_properties.offer_properties
-        if i.subcategory_id.value == subcategory_id
+        if i.enabled.value and i.subcategory_id.value == subcategory_id
     }
 
     if not offer_ids:
         return
 
     for i in offer_ids:
+        if not update and not dumper_offers_states[i]:
+            logger.info(
+                'Список лотов подкатегории %d не изменился с прошлого запроса, '
+                'как и настройки для лота %d. '
+                'Пропускаю.',
+                subcategory_id,
+                i,
+            )
+            continue
+
         try:
+            dumper_offers_states[i] = False
             await process_offer(i, offers_list, plugin_properties, hub.funpay.bot)
         except Exception:
+            dumper_offers_states[i] = True
             logger.error('Ошибка демпинга цены для лота %d.', i, exc_info=True)
 
 

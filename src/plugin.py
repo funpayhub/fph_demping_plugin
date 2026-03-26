@@ -8,6 +8,7 @@ from funpayhub.lib.telegram.ui import MenuBuilder, MenuModification
 
 from funpayhub.app.plugin import Plugin
 from funpayhub.app.dispatching import Router as HubRouter
+from collections import defaultdict
 
 from .events import OffersListFetch
 from .updater import FetchersManager
@@ -30,8 +31,9 @@ if TYPE_CHECKING:
 class DumpingPlugin(Plugin):
     def __init__(self, *args: Any) -> None:
         super().__init__(*args)
-        self.fetchers_manager = FetchersManager(on_fetch=self.on_fetch_callback)
+        self.fetchers_manager = FetchersManager(self.hub.funpay.bot, on_fetch=self.on_fetch_callback)
         self.props: DumperProperties | None = None
+        self.offers_states: dict[int, bool] = defaultdict(lambda: True)
 
     async def properties(self) -> Properties:
         self.props = DumperProperties()
@@ -57,6 +59,7 @@ class DumpingPlugin(Plugin):
                 'fetchers_manager': self.fetchers_manager,
                 'dumper_properties': self.props,
                 'dumper_props': self.props,
+                'dumper_offers_states': self.offers_states,
             },
         )
 
@@ -64,5 +67,4 @@ class DumpingPlugin(Plugin):
         offers = [i for i in offers if i.seller.id != self.hub.funpay.bot.userid]
 
         event = OffersListFetch(subcategory_id, offers)
-        print('emiting event')
         await self.hub.dispatcher.event_entry(event)
