@@ -3,7 +3,7 @@
   "plugin_version": "0.0.1",
   "app_version": ">=0.5.1",
   "plugin_id": "com.github.qvvonk.funpayhub.dumping_plugin",
-  "name": "傾卸卡車",
+  "name": "Демпер",
   "description": "Позволяет автоматизировать занижение цены против конкурентов.",
   "repo": "https://github.com/funpayhub/fph_demping_plugin",
   "author": {
