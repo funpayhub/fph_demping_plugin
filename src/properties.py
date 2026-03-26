@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Generator
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from funpayhub.lib.exceptions import ConvertionError, PropertiesError, ValidationError
+from funpayhub.lib.properties import (
+    Properties,
+    IntParameter,
+    ListParameter,
+    FloatParameter,
+    ToggleParameter,
+)
+from funpayhub.lib.base_app.properties_flags import TelegramUIEmojiFlag
 
 from funpayhub.app.properties.flags import ParameterFlags
-from funpayhub.lib.base_app.properties_flags import TelegramUIEmojiFlag
-from funpayhub.lib.exceptions import PropertiesError, ValidationError, ConvertionError
-from funpayhub.lib.properties import Properties, ListParameter, ToggleParameter, IntParameter, \
-    FloatParameter
 
 
 async def item_converter(item: Any) -> int:
@@ -28,7 +33,7 @@ class DumperProperties(Properties):
             id='com_github_qvvonk_funpayhub_dumping_plugin',
             name='Настройки демпера',
             description='Настройки демпера.',
-            file='config/demping.toml'
+            file='config/demping.toml',
         )
 
         self.friends_list: ListParameter[int] = self.attach_node(
@@ -39,7 +44,7 @@ class DumperProperties(Properties):
                 flags=[TelegramUIEmojiFlag('🤝')],
                 item_converter=item_converter,
                 add_item_validator=item_validator,
-            )
+            ),
         )
 
         self.competitors_list: ListParameter[int] = self.attach_node(
@@ -50,11 +55,14 @@ class DumperProperties(Properties):
                 flags=[TelegramUIEmojiFlag('⚔️')],
                 item_converter=item_converter,
                 add_item_validator=item_validator,
-            )
+            ),
         )
 
     async def add_for_offer(
-        self, offer_id: str | int, save: bool = True, subcategory_id: int | None = None
+        self,
+        offer_id: str | int,
+        save: bool = True,
+        subcategory_id: int | None = None,
     ) -> DumpingOfferNode:
         node_id = DumpingOfferNode.get_id_for(offer_id)
         if node_id in self._nodes:
@@ -94,7 +102,7 @@ class DumpingOfferNode(Properties):
         super().__init__(
             id=self.get_id_for(offer_id),
             name=str(offer_id),
-            description=f'Настройки демпинга лота.'
+            description='Настройки демпинга лота.',
         )
 
         self.subcategory_id: IntParameter = self.attach_node(
@@ -103,8 +111,8 @@ class DumpingOfferNode(Properties):
                 name='ID подкатегории',
                 description='ID подкатегории лота. Изменяйте только если знаете что делаете.',
                 default_value=0,
-                flags=[ParameterFlags.HIDE]
-            )
+                flags=[ParameterFlags.HIDE],
+            ),
         )
         if subcategory_id:
             self.subcategory_id._value = subcategory_id
@@ -115,7 +123,7 @@ class DumpingOfferNode(Properties):
                 name='Включить',
                 description='Включить',
                 default_value=True,
-            )
+            ),
         )
 
         self.min_price = self.attach_node(
@@ -124,8 +132,8 @@ class DumpingOfferNode(Properties):
                 name='Минимальная цена',
                 description='Минимальная цена, ниже которой плагин не будет демпить лот.',
                 default_value=99999.0,
-                flags=[TelegramUIEmojiFlag('💰')]
-            )
+                flags=[TelegramUIEmojiFlag('💰')],
+            ),
         )
 
         self.max_price = self.attach_node(
@@ -134,8 +142,8 @@ class DumpingOfferNode(Properties):
                 name='Максимальная цена',
                 description='Максимальная цена лота.',
                 default_value=999999.0,
-                flags=[TelegramUIEmojiFlag('💰')]
-            )
+                flags=[TelegramUIEmojiFlag('💰')],
+            ),
         )
 
         self.diff = self.attach_node(
@@ -145,7 +153,7 @@ class DumpingOfferNode(Properties):
                 description='Разница',
                 default_value=0.01,
                 validator=positive_validator,
-            )
+            ),
         )
 
         self.ignore_offline = self.attach_node(
@@ -153,9 +161,9 @@ class DumpingOfferNode(Properties):
                 id='ignore_offline',
                 name='Игнорировать оффлайн',
                 description='При демпинге лота не будут учитываться лоты, '
-                            'у которых нет автовыдачи и продавцы которых оффлайн.',
+                'у которых нет автовыдачи и продавцы которых оффлайн.',
                 default_value=False,
-            )
+            ),
         )
 
         self.from_rating = self.attach_node(
@@ -163,10 +171,10 @@ class DumpingOfferNode(Properties):
                 id='from_rating',
                 name='Порог рейтинга',
                 description='При демпинге будут учитываться только те лоты, '
-                            'у продавцов которых рейтинг такой же или выше указанного.',
+                'у продавцов которых рейтинг такой же или выше указанного.',
                 default_value=4,
-                flags=[TelegramUIEmojiFlag('⭐')]
-            )
+                flags=[TelegramUIEmojiFlag('⭐')],
+            ),
         )
 
         self.from_reviews_amount = self.attach_node(
@@ -174,10 +182,10 @@ class DumpingOfferNode(Properties):
                 id='from_reviews_amount',
                 name='Порог отзывов',
                 description='При демпинге будут учитываться только те лоты, у продавцов которых '
-                            'кол-во отзывов равно или больше указанного.',
+                'кол-во отзывов равно или больше указанного.',
                 default_value=0,
-                flags=[TelegramUIEmojiFlag('🗨️')]
-            )
+                flags=[TelegramUIEmojiFlag('🗨️')],
+            ),
         )
 
         self.keywords: ListParameter[str] = self.attach_node(
@@ -185,9 +193,9 @@ class DumpingOfferNode(Properties):
                 id='keywords',
                 name='Ключевые слова',
                 description='При демпинге будут учитываться только те лоты, '
-                            'в которых есть указанные ключевые слова',
-                flags=[TelegramUIEmojiFlag('🔍')]
-            )
+                'в которых есть указанные ключевые слова',
+                flags=[TelegramUIEmojiFlag('🔍')],
+            ),
         )
 
         self.ignore_friends = self.attach_node(
@@ -195,8 +203,8 @@ class DumpingOfferNode(Properties):
                 id='ignore_friends',
                 name='Игнорировать друзей',
                 description='Игнорировать друзей',
-                default_value=False
-            )
+                default_value=False,
+            ),
         )
 
     @staticmethod

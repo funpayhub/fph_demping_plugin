@@ -8,12 +8,11 @@ if TYPE_CHECKING:
     from dumping.src.properties import DumpingOfferNode
 
 
-
 def friend_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     if not props.ignore_friends:
         return True
 
-    return not (offer.seller.id in props.parent.friends_list.value)
+    return offer.seller.id not in props.parent.friends_list.value
 
 
 def min_price_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:

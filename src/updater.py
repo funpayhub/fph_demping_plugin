@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import asyncio
 from typing import TYPE_CHECKING, Any
-from collections.abc import Callable, Coroutine
-from asyncio import Lock
-from funpaybotengine import Bot
-from funpaybotengine.types.enums import SubcategoryType
 from dataclasses import dataclass
+from asyncio import Lock
+from collections.abc import Callable, Coroutine
+
+from funpaybotengine import Bot
 from dumping.src.logger import logger
+from funpaybotengine.types.enums import SubcategoryType
+
 
 if TYPE_CHECKING:
     from funpaybotengine.types import OfferPreview
@@ -45,7 +47,6 @@ class OffersFetcher:
             if self.on_fetch is not None:
                 asyncio.create_task(self.on_fetch(self._subcategory_id, list(page.offers or [])))
 
-
     async def _start(self) -> None:
         if self._running_lock.locked():
             raise RuntimeError(f'Fetcher for subcategory {self.subcategory_id} already running.')
@@ -62,10 +63,9 @@ class OffersFetcher:
         except asyncio.CancelledError:
             logger.info(
                 'Цикл получения таблицы лотов подкатегории %s остановлен.',
-                self.subcategory_id
+                self.subcategory_id,
             )
             raise
-
 
     @property
     def subcategory_id(self) -> int:

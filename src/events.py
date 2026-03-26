@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
 from funpayhub.app.dispatching.events.base import HubEvent
+
 
 if TYPE_CHECKING:
     from funpaybotengine.types import OfferPreview
