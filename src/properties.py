@@ -3,9 +3,21 @@ from typing import Any, TYPE_CHECKING
 
 from funpayhub.app.properties.flags import ParameterFlags
 from funpayhub.lib.base_app.properties_flags import TelegramUIEmojiFlag
-from funpayhub.lib.exceptions import PropertiesError, ValidationError
+from funpayhub.lib.exceptions import PropertiesError, ValidationError, ConvertionError
 from funpayhub.lib.properties import Properties, ListParameter, ToggleParameter, IntParameter, \
     FloatParameter
+
+
+async def item_converter(item: Any) -> int:
+    try:
+        return int(item)
+    except:
+        raise ConvertionError('Не удалось конвертировать значение.')
+
+
+async def item_validator(v: list[int], item: int) -> None:
+    if item in v:
+        raise ValidationError('Значение уже в списке.')
 
 
 class DumperProperties(Properties):
@@ -22,7 +34,20 @@ class DumperProperties(Properties):
                 id='friends',
                 name='Друзья',
                 description='Друзья.',
-                flags=[TelegramUIEmojiFlag('🤝')]
+                flags=[TelegramUIEmojiFlag('🤝')],
+                item_converter=item_converter,
+                add_item_validator=item_validator,
+            )
+        )
+
+        self.competitors_list: ListParameter[int] = self.attach_node(
+            ListParameter(
+                id='competitors',
+                name='Конкуренты',
+                description='Конкуренты.',
+                flags=[TelegramUIEmojiFlag('⚔️')],
+                item_converter=item_converter,
+                add_item_validator=item_validator,
             )
         )
 
@@ -56,7 +81,7 @@ class DumperProperties(Properties):
 
 async def positive_validator(v: float) -> None:
     if v < 0.01:
-        raise ValidationError('Значение должнобыть больше или равно 0.01.')
+        raise ValidationError('Значение должно быть больше или равно 0.01.')
 
 
 class DumpingOfferNode(Properties):
