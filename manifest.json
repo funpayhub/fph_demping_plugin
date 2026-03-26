@@ -1,7 +1,7 @@
 {
   "manifest": 1,
-  "plugin_version": "0.0.1",
-  "app_version": ">=0.5.1",
+  "plugin_version": "1.0.0",
+  "app_version": ">=0.5.6",
   "plugin_id": "com.github.qvvonk.funpayhub.dumping_plugin",
   "name": "Демпер",
   "description": "Позволяет автоматизировать занижение цены против конкурентов.",
