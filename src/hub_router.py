@@ -14,7 +14,9 @@ router = Router(name='dumper')
 
 @router.on_funpay_start()
 async def start_tasks(
-    event: FunPayStartEvent, fetchers_manager: FetchersManager, dumper_props: DumperProps
+    event: FunPayStartEvent,
+    fetchers_manager: FetchersManager,
+    dumper_props: DumperProps,
 ):
     if event.error:
         return

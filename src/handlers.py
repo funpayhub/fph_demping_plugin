@@ -1,20 +1,23 @@
 from __future__ import annotations
+
+import asyncio
 from typing import TYPE_CHECKING
 
-from funpayparsers.types import Currency, SubcategoryType
+from dumping.src.logger import logger
+from dumping.src.filters import filter_offers
+from funpayparsers.types import Currency
+from dumping.src.properties import DumpingOfferNode
 
 from funpayhub.app.dispatching import Router
+
 from .events import OffersListFetch
-from dumping.src.filters import filter_offers
-from dumping.src.logger import logger
-from dumping.src.properties import DumpingOfferNode
-import asyncio
 
 
 if TYPE_CHECKING:
+    from funpaybotengine import Bot as FPBot
     from funpaybotengine.types import OfferPreview
     from dumping.src.properties import DumperProperties
-    from funpaybotengine import Bot as FPBot
+
     from funpayhub.app.main import FunPayHub as FPH
 
 router = Router('dumping:internal')
@@ -28,7 +31,7 @@ async def dump_price(
     subcategory_id: int,
     offers_list: list[OfferPreview],
     plugin_properties: DumperProperties,
-    hub: FPH
+    hub: FPH,
 ) -> None:
     offer_ids = {
         int(DumpingOfferNode.extract_offer_id(i.id))
@@ -42,12 +45,15 @@ async def dump_price(
     for i in offer_ids:
         try:
             await process_offer(i, offers_list, plugin_properties, hub.funpay.bot)
-        except Exception as e:
+        except Exception:
             logger.error('Ошибка демпинга цены для лота %d.', i, exc_info=True)
 
 
 async def process_offer(
-    offer_id: int, offers_list: list[OfferPreview], plugin_properties: DumperProperties, bot: FPBot
+    offer_id: int,
+    offers_list: list[OfferPreview],
+    plugin_properties: DumperProperties,
+    bot: FPBot,
 ) -> None:
     props = plugin_properties.get_for_offer(offer_id)
     if props is None:
@@ -85,9 +91,9 @@ async def get_fee(subcategory_id: int, bot: FPBot) -> float:
         attempts -= 1
         try:
             result = await bot.calc_lots(subcategory_id, INIT_PRICE)
-            minimum = min([
-                i.price for i in result.methods if i.price_money_value.currency is Currency.RUB
-            ])
+            minimum = min(
+                [i.price for i in result.methods if i.price_money_value.currency is Currency.RUB]
+            )
             result = (minimum / (INIT_PRICE / 100) - 100) / 100
             return result
         except Exception:

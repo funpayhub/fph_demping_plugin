@@ -111,12 +111,17 @@ class RenamePropertiesModification(MenuModification, modification_id='dumper:ren
 
 class HeaderTextModification(MenuModification, modification_id='dumper:headertext'):
     async def filter(
-        self, ctx: NodeMenuContext, menu: Menu, dumper_props: DumperProps, props: FPHProps
+        self,
+        ctx: NodeMenuContext,
+        menu: Menu,
+        dumper_props: DumperProps,
+        props: FPHProps,
     ):
         node = props.get_node(ctx.entry_path)
 
         return len(ctx.entry_path) == len(dumper_props.path) + 1 and isinstance(
-            node, DumpingOfferNode
+            node,
+            DumpingOfferNode,
         )
 
     async def modify(self, ctx: NodeMenuContext, menu: Menu, hub: FPH):
@@ -136,12 +141,17 @@ class HeaderTextModification(MenuModification, modification_id='dumper:headertex
 
 class AddRemoveButton(MenuModification, modification_id='dumper:add_remove_button'):
     async def filter(
-        self, ctx: NodeMenuContext, menu: Menu, dumper_props: DumperProps, props: FPHProps
+        self,
+        ctx: NodeMenuContext,
+        menu: Menu,
+        dumper_props: DumperProps,
+        props: FPHProps,
     ):
         node = props.get_node(ctx.entry_path)
 
         return len(ctx.entry_path) == len(dumper_props.path) + 1 and isinstance(
-            node, DumpingOfferNode
+            node,
+            DumpingOfferNode,
         )
 
     async def modify(self, ctx: NodeMenuContext, menu: Menu):

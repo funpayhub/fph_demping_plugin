@@ -8,10 +8,10 @@ from funpayhub.lib.telegram.ui import MenuBuilder, MenuModification
 
 from funpayhub.app.plugin import Plugin
 from funpayhub.app.dispatching import Router as HubRouter
-from .handlers import router as INTERNAL_ROUTER
 
 from .events import OffersListFetch
 from .updater import FetchersManager
+from .handlers import router as INTERNAL_ROUTER
 from .telegram import (
     MENUS,
     ROUTERS as TELEGRAM_ROUTERS,
@@ -57,7 +57,7 @@ class DumpingPlugin(Plugin):
                 'fetchers_manager': self.fetchers_manager,
                 'dumper_properties': self.props,
                 'dumper_props': self.props,
-            }
+            },
         )
 
     async def on_fetch_callback(self, subcategory_id: int, offers: list[OfferPreview]) -> None:
