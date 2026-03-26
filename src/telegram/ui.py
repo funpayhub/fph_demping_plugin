@@ -2,7 +2,7 @@ from __future__ import annotations
 
 __all__ = ['AddOfferButtonModification', 'AddDumpingMenuBuilder']
 
-
+import html
 from typing import TYPE_CHECKING
 
 from funpayparsers.types import SubcategoryType
@@ -102,6 +102,26 @@ class RenamePropertiesModification(MenuModification, modification_id='dumper:ren
 
         return menu
 
+
+class HeaderTextModification(MenuModification, modification_id='dumper:headertext'):
+    async def filter(self, ctx: NodeMenuContext, menu: Menu, dumper_props: DumperProps, props: FPHProps):
+        node = props.get_node(ctx.entry_path)
+
+        return len(ctx.entry_path) == len(dumper_props.path) + 1 and isinstance(node, DumpingOfferNode)
+
+    async def modify(self, ctx: NodeMenuContext, menu: Menu, hub: FPH):
+        offer_id = int(DumpingOfferNode.extract_offer_id(ctx.entry_path[-1]))
+        profile = await hub.funpay.profile()
+        offers = profile.offers.get(SubcategoryType.OFFERS, {})
+        offers = {i.id: i for l in offers.values() for i in l}
+
+        if offer := (offers.get(offer_id)):
+            menu.header_text = f'<b>[{offer.id}] {html.escape(offer.title)}</b>'
+            OFFERS_CACHE[offer.id] = offer.title
+        elif name := OFFERS_CACHE.get(offer_id):
+            menu.header_text = f'<b>[{offer.id}] {html.escape(name)}</b>'
+
+        return menu
 
 class AddRemoveButton(MenuModification, modification_id='dumper:add_remove_button'):
     async def filter(self, ctx: NodeMenuContext, menu: Menu, dumper_props: DumperProps, props: FPHProps):

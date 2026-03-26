@@ -1,4 +1,4 @@
-from .ui import AddOfferButtonModification, AddDumpingMenuBuilder, RenamePropertiesModification, AddRemoveButton
+from .ui import AddOfferButtonModification, AddDumpingMenuBuilder, RenamePropertiesModification, AddRemoveButton, HeaderTextModification
 from funpayhub.app.telegram.ui.ids import MenuIds
 from .router import router as router
 
