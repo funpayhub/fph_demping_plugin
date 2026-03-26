@@ -27,7 +27,7 @@ class DumperProperties(Properties):
         )
 
     async def add_for_offer(
-        self, offer_id: str, save: bool = True, subcategory_id: int | None = None
+        self, offer_id: str | int, save: bool = True, subcategory_id: int | None = None
     ) -> DumpingOfferNode:
         node_id = DumpingOfferNode.get_id_for(offer_id)
         if node_id in self._nodes:
@@ -45,8 +45,9 @@ class DumperProperties(Properties):
             if not DumpingOfferNode.is_offer_node(node_id):
                 continue
 
-            node = await self.add_for_offer(node_id.lstrip('__offer__'), save=False)
+            node = DumpingOfferNode(DumpingOfferNode.extract_offer_id(node_id))
             await node.load_from_dict(node_dict)
+            self.attach_node(node, replace=True)
 
     @property
     def offer_properties(self) -> list[DumpingOfferNode]:
@@ -54,7 +55,7 @@ class DumperProperties(Properties):
 
 
 async def positive_validator(v: float) -> None:
-    if v <= 0.01:
+    if v < 0.01:
         raise ValidationError('Значение должнобыть больше или равно 0.01.')
 
 
@@ -62,10 +63,10 @@ class DumpingOfferNode(Properties):
     if TYPE_CHECKING:
         parent: DumperProperties
 
-    def __init__(self, offer_id: str, subcategory_id: int | None = None):
+    def __init__(self, offer_id: str | int, subcategory_id: int | None = None):
         super().__init__(
             id=self.get_id_for(offer_id),
-            name=offer_id,
+            name=str(offer_id),
             description=f'Настройки демпинга лота.'
         )
 
@@ -96,6 +97,7 @@ class DumpingOfferNode(Properties):
                 name='Минимальная цена',
                 description='Минимальная цена, ниже которой плагин не будет демпить лот.',
                 default_value=99999.0,
+                flags=[TelegramUIEmojiFlag('💰')]
             )
         )
 
@@ -105,7 +107,7 @@ class DumpingOfferNode(Properties):
                 name='Максимальная цена',
                 description='Максимальная цена лота.',
                 default_value=999999.0,
-
+                flags=[TelegramUIEmojiFlag('💰')]
             )
         )
 
@@ -135,7 +137,8 @@ class DumpingOfferNode(Properties):
                 name='Порог рейтинга',
                 description='При демпинге будут учитываться только те лоты, '
                             'у продавцов которых рейтинг такой же или выше указанного.',
-                default_value=4
+                default_value=4,
+                flags=[TelegramUIEmojiFlag('⭐')]
             )
         )
 
@@ -145,7 +148,8 @@ class DumpingOfferNode(Properties):
                 name='Порог отзывов',
                 description='При демпинге будут учитываться только те лоты, у продавцов которых '
                             'кол-во отзывов равно или больше указанного.',
-                default_value=0
+                default_value=0,
+                flags=[TelegramUIEmojiFlag('🗨️')]
             )
         )
 
@@ -154,7 +158,8 @@ class DumpingOfferNode(Properties):
                 id='keywords',
                 name='Ключевые слова',
                 description='При демпинге будут учитываться только те лоты, '
-                            'в которых есть указанные ключевые слова'
+                            'в которых есть указанные ключевые слова',
+                flags=[TelegramUIEmojiFlag('🔍')]
             )
         )
 
@@ -167,13 +172,19 @@ class DumpingOfferNode(Properties):
             )
         )
 
-    @classmethod
-    def get_id_for(cls, offer_id: str) -> str:
+    @staticmethod
+    def get_id_for(offer_id: str | int) -> str:
         return f'__offer__{offer_id}'
 
-    @classmethod
-    def is_offer_node(cls, node_id: str) -> bool:
+    @staticmethod
+    def is_offer_node(node_id: str) -> bool:
         return node_id.startswith('__offer__')
+
+    @staticmethod
+    def extract_offer_id(node_id: str) -> str:
+        if not DumpingOfferNode.is_offer_node(node_id):
+            raise ValueError('Node ID is not an offer node.')
+        return node_id.lstrip('__offer__')
 
     @property
     def offer_id(self) -> int:
