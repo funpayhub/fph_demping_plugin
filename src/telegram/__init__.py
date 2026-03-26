@@ -1,10 +1,10 @@
-from .ui import AddOfferButtonModification, AddDumpingMenuBuilder, RenamePropertiesModification
+from .ui import AddOfferButtonModification, AddDumpingMenuBuilder, RenamePropertiesModification, AddRemoveButton
 from funpayhub.app.telegram.ui.ids import MenuIds
 from .router import router as router
 
 
 MENU_MODIFICATIONS = {
-    MenuIds.props_node: [AddOfferButtonModification, RenamePropertiesModification]
+    MenuIds.props_node: [AddOfferButtonModification, RenamePropertiesModification, AddRemoveButton]
 }
 
 MENUS = [AddDumpingMenuBuilder]

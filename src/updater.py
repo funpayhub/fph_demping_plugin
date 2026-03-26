@@ -3,30 +3,27 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any
 from collections.abc import Callable, Coroutine
-from asyncio import Lock, Event
+from asyncio import Lock
 from funpaybotengine import Bot
 from funpaybotengine.types.enums import SubcategoryType
+from dataclasses import dataclass
+from dumping.src.logger import logger
 
 if TYPE_CHECKING:
     from funpaybotengine.types import OfferPreview
 
 
+type OnFetchCallback = Callable[[int, list[OfferPreview]], Coroutine[Any, Any, Any]]
+
+
 class OffersFetcher:
-    def __init__(
-        self,
-        subcategory_id: int,
-        *,
-        on_fetch: Callable[[int, list[OfferPreview]], Coroutine[Any, Any, Any]] | None = None
-    ):
+    def __init__(self, subcategory_id: int, *, on_fetch: OnFetchCallback | None = None):
         self._subcategory_id = subcategory_id
         self.on_fetch = on_fetch
 
         self._last_hash: int | None = None
 
         self._running_lock: Lock = Lock()
-
-        self._stopping_lock: Lock = Lock()
-        self._stopped_event: Event = Event()
 
     async def _iteration(self) -> None:
         bot = Bot()
@@ -36,6 +33,7 @@ class OffersFetcher:
                 page = await bot.get_subcategory_page(SubcategoryType.OFFERS, self._subcategory_id)
                 break
             except Exception as e:
+                print(e)
                 continue
         else:
             ...
@@ -48,30 +46,79 @@ class OffersFetcher:
                 asyncio.create_task(self.on_fetch(self._subcategory_id, list(page.offers or [])))
 
 
-    async def start(self) -> None:
+    async def _start(self) -> None:
         if self._running_lock.locked():
             raise RuntimeError(f'Fetcher for subcategory {self.subcategory_id} already running.')
 
-        self._stopped_event.clear()
+        logger.info('Цикл получения таблицы лотов подкатегории %s запущен.', self.subcategory_id)
         async with self._running_lock:
             while True:
-                if self._stopping_lock.locked():
-                    self._stopped_event.set()
-                    return
                 await self._iteration()
+                await asyncio.sleep(30)
 
-    async def stop(self) -> None:
-        if not self._running_lock.locked():
-            return
-
-        if self._stopping_lock.locked():
-            await self._stopped_event.wait()
-            return
-
-        async with self._stopping_lock:
-            await self._stopped_event.wait()
+    async def start(self) -> None:
+        try:
+            await self._start()
+        except asyncio.CancelledError:
+            logger.info(
+                'Цикл получения таблицы лотов подкатегории %s остановлен.',
+                self.subcategory_id
+            )
+            raise
 
 
     @property
     def subcategory_id(self) -> int:
         return self._subcategory_id
+
+
+@dataclass
+class FetcherInfo:
+    subcategory_id: int
+    fetcher: OffersFetcher
+    task: asyncio.Task | None = None
+    subscribers: int = 1
+
+
+class FetchersManager:
+    def __init__(self, on_fetch: OnFetchCallback | None = None):
+        self._fetchers: dict[int, FetcherInfo] = {}
+        self._on_fetch = on_fetch
+
+    def subscribe_to(self, subcategory_id: int) -> None:
+        if subcategory_id in self._fetchers:
+            self._fetchers[subcategory_id].subscribers += 1
+            return
+
+        fetcher = OffersFetcher(subcategory_id)
+        info = FetcherInfo(subcategory_id, fetcher)
+        task = asyncio.create_task(fetcher.start())
+        info.task = task
+        self._fetchers[subcategory_id] = info
+
+    async def unsubscribe_from(self, subcategory_id: int) -> None:
+        if subcategory_id not in self._fetchers:
+            return
+
+        info = self._fetchers[subcategory_id]
+        info.subscribers -= 1
+        if info.subscribers <= 0:
+            del self._fetchers[subcategory_id]
+
+            if info.task is not None:
+                info.task.cancel()
+
+                try:
+                    await info.task
+                except asyncio.CancelledError:
+                    pass
+
+    @property
+    def on_fetch_callback(self) -> OnFetchCallback | None:
+        return self._on_fetch
+
+    @on_fetch_callback.setter
+    def on_fetch_callback(self, on_fetch: OnFetchCallback | None):
+        self._on_fetch = on_fetch
+        for i in self._fetchers.values():
+            i.on_fetch = on_fetch

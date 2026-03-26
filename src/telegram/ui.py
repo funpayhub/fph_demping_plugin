@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from funpayparsers.types import SubcategoryType
 
+from funpayhub.app.telegram.ui.premade import confirmable_button
 from funpayhub.lib.base_app.telegram.app.ui.ui_finalizers import StripAndNavigationFinalizer
 from funpayhub.lib.telegram.ui import MenuModification, MenuBuilder, MenuContext
 from funpayhub.lib.translater import translater
@@ -17,16 +18,16 @@ from . import callbacks as cbs
 
 if TYPE_CHECKING:
     from funpayhub.lib.base_app.telegram.app.properties.ui import NodeMenuContext
-    from dumping.src.properties import DumperProperties
-    from funpayhub.app.properties import FunPayHubProperties as FPHProps
+    from dumping.src.properties import DumperProperties as DumperProps
     from funpayhub.app.main import FunPayHub as FPH
+    from funpayhub.app.properties import FunPayHubProperties as FPHProps
 
 
 ru = translater.translate
 
 
 class AddDumpingMenuBuilder(MenuBuilder, menu_id='dumper:add_dumping', context_type=MenuContext):
-    async def build(self, ctx: MenuContext, hub: FPH, props: FPHProps) -> Menu:
+    async def build(self, ctx: MenuContext, hub: FPH, dumper_props: DumperProps) -> Menu:
         menu = Menu(finalizer=StripAndNavigationFinalizer())
         if not hub.funpay.authenticated:
             menu.main_text = ru(
@@ -38,13 +39,10 @@ class AddDumpingMenuBuilder(MenuBuilder, menu_id='dumper:add_dumping', context_t
         menu.main_text = ru('<b>📋 Выберите лот, которому хотите настроить демпинг.</b>')
 
         profile = await hub.funpay.profile()
-        props: DumperProperties = props.plugin_properties.get_properties(
-            ['com_github_qvvonk_funpayhub_dumping_plugin']
-        )
         for subcategory_id, offers in profile.offers.get(SubcategoryType.OFFERS, {}).items():
             for offer in offers:
                 node_id = DumpingOfferNode.get_id_for(offer.id)
-                if node_id in props.entries:
+                if node_id in dumper_props.entries:
                     continue
 
                 menu.main_keyboard.add_callback_button(
@@ -60,11 +58,8 @@ class AddDumpingMenuBuilder(MenuBuilder, menu_id='dumper:add_dumping', context_t
 
 
 class AddOfferButtonModification(MenuModification, modification_id='dumper:add_offer_button'):
-    async def filter(self, ctx: NodeMenuContext, menu: Menu, props: FPHProps):
-        plugin_props = props.plugin_properties.get_properties(
-            ['com_github_qvvonk_funpayhub_dumping_plugin']
-        )
-        return ctx.entry_path == plugin_props.path
+    async def filter(self, ctx: NodeMenuContext, menu: Menu, dumper_props: DumperProps):
+        return ctx.entry_path == dumper_props.path
 
     async def modify(self, ctx: NodeMenuContext, menu: Menu):
         menu.footer_keyboard.add_callback_button(
@@ -81,11 +76,8 @@ OFFERS_CACHE: dict[int, str] = {}
 
 
 class RenamePropertiesModification(MenuModification, modification_id='dumper:rename_props'):
-    async def filter(self, ctx: NodeMenuContext, menu: Menu, props: FPHProps, hub: FPH):
-        plugin_props = props.plugin_properties.get_properties(
-            ['com_github_qvvonk_funpayhub_dumping_plugin']
-        )
-        return hub.funpay.authenticated and ctx.entry_path == plugin_props.path
+    async def filter(self, ctx: NodeMenuContext, menu: Menu, dumper_props: DumperProps, hub: FPH):
+        return hub.funpay.authenticated and ctx.entry_path == dumper_props.path
 
     async def modify(self, ctx: NodeMenuContext, menu: Menu, hub: FPH):
         profile = await hub.funpay.profile()
@@ -108,4 +100,26 @@ class RenamePropertiesModification(MenuModification, modification_id='dumper:ren
                 elif name := OFFERS_CACHE.get(offer_id):
                     button.text = f'[{offer_id}] {name}'
 
+        return menu
+
+
+class AddRemoveButton(MenuModification, modification_id='dumper:add_remove_button'):
+    async def filter(self, ctx: NodeMenuContext, menu: Menu, dumper_props: DumperProps, props: FPHProps):
+        node = props.get_node(ctx.entry_path)
+
+        return len(ctx.entry_path) == len(dumper_props.path) + 1 and isinstance(node, DumpingOfferNode)
+
+    async def modify(self, ctx: NodeMenuContext, menu: Menu):
+        menu.footer_keyboard.add_row(
+            *confirmable_button(
+                ctx=ctx,
+                button_id='unbind_dumping',
+                text='🗑️ Удалить',
+                callback_data=cbs.UnbindOffer(
+                    offer_id=int(DumpingOfferNode.extract_offer_id(ctx.entry_path[-1])),
+                    ui_history=ctx.ui_history
+                ).pack(),
+                style='danger'
+            )
+        )
         return menu

@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+from collections.abc import Generator
 from typing import Any, TYPE_CHECKING
 
 from funpayhub.app.properties.flags import ParameterFlags
