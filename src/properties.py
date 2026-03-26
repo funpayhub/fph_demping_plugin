@@ -88,6 +88,16 @@ class DumperProperties(Properties):
     def offer_properties(self) -> list[DumpingOfferNode]:
         return [i for i in self._nodes.values() if isinstance(i, DumpingOfferNode)]
 
+    def get_for_offer(self, offer_id: int | str) -> DumpingOfferNode | None:
+        node_id = DumpingOfferNode.get_id_for(offer_id)
+        if node_id not in self._nodes:
+            return None
+
+        if not isinstance(self._nodes[node_id], DumpingOfferNode):
+            return None
+
+        return self._nodes[node_id]
+
 
 async def positive_validator(v: float) -> None:
     if v < 0.01:

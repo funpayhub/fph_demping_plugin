@@ -8,6 +8,7 @@ from funpayhub.lib.telegram.ui import MenuBuilder, MenuModification
 
 from funpayhub.app.plugin import Plugin
 from funpayhub.app.dispatching import Router as HubRouter
+from .handlers import router as INTERNAL_ROUTER
 
 from .events import OffersListFetch
 from .updater import FetchersManager
@@ -40,7 +41,7 @@ class DumpingPlugin(Plugin):
         return TELEGRAM_ROUTERS
 
     async def hub_routers(self) -> HubRouter | list[HubRouter]:
-        return HUB_ROUTER
+        return [HUB_ROUTER, INTERNAL_ROUTER]
 
     async def menus(self) -> type[MenuBuilder] | list[type[MenuBuilder]]:
         return MENUS
