@@ -9,18 +9,18 @@ if TYPE_CHECKING:
 
 
 def friend_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
-    if not props.ignore_friends:
+    if not props.ignore_friends.value:
         return True
 
     return offer.seller.id not in props.parent.friends_list.value
 
 
 def min_price_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
-    return (offer.price - props.diff.value) >= props.min_price.value
+    return (offer.price.value - props.diff.value) >= props.min_price.value
 
 
 def max_price_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
-    return (offer.price - props.diff.value) <= props.max_price.value
+    return (offer.price.value - props.diff.value) <= props.max_price.value
 
 
 def rating_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
@@ -42,7 +42,7 @@ def keywords_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
 
 
 def online_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
-    if not props.ignore_offline:
+    if not props.ignore_offline.value:
         return True
 
     return not offer.auto_delivery and not offer.seller.online

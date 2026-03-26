@@ -64,4 +64,5 @@ class DumpingPlugin(Plugin):
         offers = [i for i in offers if i.seller.id != self.hub.funpay.bot.userid]
 
         event = OffersListFetch(subcategory_id, offers)
+        print('emiting event')
         await self.hub.dispatcher.event_entry(event)

@@ -90,7 +90,7 @@ class FetchersManager:
             self._fetchers[subcategory_id].subscribers += 1
             return
 
-        fetcher = OffersFetcher(subcategory_id)
+        fetcher = OffersFetcher(subcategory_id, on_fetch=self.on_fetch_callback)
         info = FetcherInfo(subcategory_id, fetcher)
         task = asyncio.create_task(fetcher.start())
         info.task = task
