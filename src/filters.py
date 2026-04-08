@@ -8,13 +8,6 @@ if TYPE_CHECKING:
     from dumping.src.properties import DumpingOfferNode
 
 
-def friend_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
-    if not props.ignore_friends.value:
-        return True
-
-    return offer.seller.id not in props.parent.friends_list.value
-
-
 def min_price_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     return (offer.price.value - props.diff.value) >= props.min_price.value
 
@@ -48,13 +41,26 @@ def online_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
     return not offer.auto_delivery and not offer.seller.online
 
 
+def users_list_filter(offer: OfferPreview, props: DumpingOfferNode) -> bool:
+    users_list, list_type = props.users_list.value, props.list_type.real_value
+    if not users_list or list_type == 'ignore':
+        return True
+
+    seller_in_list = offer.seller.id in users_list or offer.seller.username in users_list
+    if list_type == 'friends':
+        return not seller_in_list
+    elif list_type == 'competitors':
+        return seller_in_list
+    return True
+
+
 FILTERS = [
-    friend_filter,
     min_price_filter,
     max_price_filter,
     rating_filter,
     review_filter,
     online_filter,
+    users_list_filter,
 ]
 
 

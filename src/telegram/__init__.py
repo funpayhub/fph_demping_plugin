@@ -8,6 +8,7 @@ from .ui import (
     HeaderTextModification,
     AddOfferButtonModification,
     RenamePropertiesModification,
+    KeyboardModification
 )
 from .router import router as router
 
@@ -18,6 +19,7 @@ MENU_MODIFICATIONS = {
         RenamePropertiesModification,
         AddRemoveButton,
         HeaderTextModification,
+        KeyboardModification,
     ],
 }
 

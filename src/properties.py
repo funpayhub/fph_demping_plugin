@@ -8,8 +8,9 @@ from funpayhub.lib.properties import (
     IntParameter,
     ListParameter,
     FloatParameter,
-    ToggleParameter,
+    ToggleParameter, ChoiceParameter,
 )
+from funpayhub.lib.properties.parameter.choice_parameter import Choice
 from funpayhub.lib.base_app.properties_flags import TelegramUIEmojiFlag
 
 from funpayhub.app.properties.flags import ParameterFlags
@@ -208,13 +209,27 @@ class DumpingOfferNode(Properties):
             ),
         )
 
-        self.ignore_friends = self.attach_node(
-            ToggleParameter(
-                id='ignore_friends',
-                name='Игнорировать друзей',
-                description='Игнорировать друзей',
-                default_value=False,
-            ),
+        self.users_list: ListParameter[int | str] = self.attach_node(
+            ListParameter(
+                id='users_list',
+                name='Список',
+                description='Список пользователей (ID или юзернеймы).',
+                flags=[TelegramUIEmojiFlag]
+            )
+        )
+
+        self.list_type: ChoiceParameter[str] = self.attach_node(
+            ChoiceParameter(
+                id='list_type',
+                name='Тип списка',
+                description='Тип списка.',
+                choices=(
+                    Choice(id='ignore', name='Игнорировать список', value='ignore'),
+                    Choice(id='friends', name='Друзья', value='friends'),
+                    Choice(id='competitors', name='Конкуренты', value='competitors'),
+                ),
+                default_value='ignore',
+            )
         )
 
     @staticmethod

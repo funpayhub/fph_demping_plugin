@@ -139,6 +139,39 @@ class HeaderTextModification(MenuModification, modification_id='dumper:headertex
         return menu
 
 
+class KeyboardModification(MenuModification, modification_id='dumper:node_props_mod'):
+    async def filter(
+        self, ctx: NodeMenuContext, menu: Menu, dumper_props: DumperProps, props: FPHProps
+    ):
+        node = props.get_node(ctx.entry_path)
+        return node.is_child(dumper_props) and isinstance(node, DumpingOfferNode)
+
+    async def modify(self, ctx: NodeMenuContext, menu: Menu) -> Menu:
+        params = ['users_list', 'list_type']
+        to_delete, btns = [], []
+        for line_idx, line in enumerate(menu.main_keyboard.keyboard):
+            for btn_idx, btn in enumerate(line):
+                if not btn.button_id.startswith('param_change:') or not any(
+                    btn.button_id.endswith(f'.{p}') for p in params
+                ):
+                    continue
+                to_delete.append((line_idx, btn_idx))
+                btns.append(btn)
+
+        if not to_delete:
+            return menu
+
+        for line_idx, btn_idx in reversed(to_delete):
+            line = menu.main_keyboard.keyboard[line_idx]
+            line.pop(btn_idx)
+
+        for btn in reversed(btns):
+            menu.main_keyboard.keyboard[to_delete[0][0]].insert(to_delete[0][1], btn)
+
+        menu.main_keyboard.keyboard = [i for i in menu.main_keyboard.keyboard if i]
+        return menu
+
+
 class AddRemoveButton(MenuModification, modification_id='dumper:add_remove_button'):
     async def filter(
         self,
