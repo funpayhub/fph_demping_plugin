@@ -37,28 +37,6 @@ class DumperProperties(Properties):
             file='config/demping.toml',
         )
 
-        self.friends_list: ListParameter[int] = self.attach_node(
-            ListParameter(
-                id='friends',
-                name='Друзья',
-                description='Друзья.',
-                flags=[TelegramUIEmojiFlag('🤝')],
-                item_converter=item_converter,
-                add_item_validator=item_validator,
-            ),
-        )
-
-        self.competitors_list: ListParameter[int] = self.attach_node(
-            ListParameter(
-                id='competitors',
-                name='Конкуренты',
-                description='Конкуренты.',
-                flags=[TelegramUIEmojiFlag('⚔️')],
-                item_converter=item_converter,
-                add_item_validator=item_validator,
-            ),
-        )
-
     async def add_for_offer(
         self,
         offer_id: str | int,
@@ -121,7 +99,7 @@ class DumpingOfferNode(Properties):
                 id='subcategory_id',
                 name='ID подкатегории',
                 description='ID подкатегории лота. Изменяйте только если знаете что делаете.',
-                default_value=0,
+                default_value=-1,
                 flags=[ParameterFlags.HIDE],
             ),
         )
@@ -245,6 +223,10 @@ class DumpingOfferNode(Properties):
         if not DumpingOfferNode.is_offer_node(node_id):
             raise ValueError('Node ID is not an offer node.')
         return node_id.lstrip('__offer__')
+
+    @property
+    def is_placeholder(self) -> bool:
+        return self.subcategory_id.value == -1
 
     @property
     def offer_id(self) -> int:
